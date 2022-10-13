@@ -1899,13 +1899,16 @@ LogicalResult inferDotGeneralOp(
     ArrayRef<int64_t> rhsContractingDimensions,
     std::optional<ArrayAttr> precisionConfig,
     SmallVectorImpl<ShapedTypeComponents>& inferredReturnShapes) {
+  // dot_general_c12
   if (failed(verifyPrecisionConfig(location, precisionConfig)))
     return failure();
 
+  // dot_general_c2
   if (lhsBatchingDimensions.size() != rhsBatchingDimensions.size())
     return emitOptionalError(location,
                              "lhs and rhs should have the same "
                              "number of batching dimensions");
+  // dot_general_c3
   if (lhsContractingDimensions.size() != rhsContractingDimensions.size())
     return emitOptionalError(location,
                              "lhs and rhs should have the same "
@@ -1925,14 +1928,14 @@ LogicalResult inferDotGeneralOp(
     }
     return success();
   };
-
+  // dot_general_c4
   if (failed(checkDimsDistinct(lhsBatchingDimensions, lhsContractingDimensions,
                                dimSet, "lhs_batching_dimensions",
                                "lhs_contracting_dimensions")))
     return failure();
 
   dimSet.clear();
-
+  // dot_general_c5
   if (failed(checkDimsDistinct(rhsBatchingDimensions, rhsContractingDimensions,
                                dimSet, "rhs_batching_dimensions",
                                "rhs_contracting_dimensions")))
@@ -1950,7 +1953,8 @@ LogicalResult inferDotGeneralOp(
   };
   auto lhsRankedType = lhsType.dyn_cast<RankedTensorType>();
   auto rhsRankedType = rhsType.dyn_cast<RankedTensorType>();
-
+  // dot_general_c6
+  // dot_general_c7
   if (lhsRankedType) {
     if (failed(checkDimsInRange(lhsRankedType.getRank(), lhsBatchingDimensions,
                                 "lhs_batching_dimensions")) ||
@@ -1959,6 +1963,8 @@ LogicalResult inferDotGeneralOp(
                                 "lhs_contracting_dimensions")))
       return failure();
   }
+  // dot_general_c8
+  // dot_general_c9
   if (rhsRankedType) {
     if (failed(checkDimsInRange(rhsRankedType.getRank(), rhsBatchingDimensions,
                                 "rhs_batching_dimensions")) ||
@@ -1974,6 +1980,7 @@ LogicalResult inferDotGeneralOp(
 
     for (auto [lhs, rhs] :
          llvm::zip(lhsBatchingDimensions, rhsBatchingDimensions)) {
+      // dot_general_c10
       if (!verifyCompatibleDims(lhsShape[lhs], rhsShape[rhs]))
         return emitOptionalError(location,
                                  "batching dimension sizes must "
@@ -1982,6 +1989,7 @@ LogicalResult inferDotGeneralOp(
 
     for (auto [lhs, rhs] :
          llvm::zip(lhsContractingDimensions, rhsContractingDimensions)) {
+      // dot_general_c11
       if (!verifyCompatibleDims(lhsShape[lhs], rhsShape[rhs]))
         return emitOptionalError(location,
                                  "contracting dimension sizes must "
@@ -2008,7 +2016,7 @@ LogicalResult inferDotGeneralOp(
     if (!llvm::is_contained(rhsBatchingDimensions, i) &&
         !llvm::is_contained(rhsContractingDimensions, i))
       dimensions.push_back(rhsShape[i]);
-
+  // dot_general_c13
   inferredReturnShapes.emplace_back(dimensions);
   return success();
 }

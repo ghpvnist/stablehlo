@@ -191,7 +191,18 @@ Element::Element(Type type, bool value) : type_(type), value_(value) {}
 Element::Element(Type type, APFloat value) : type_(type), value_(value) {}
 
 Element::Element(Type type, double value) {
-  if (isSupportedFloatType(type)) {
+  if (isSupportedBooleanType(type)) {
+    type_ = type;
+    value_ = value != 0.0 ? true : false;
+  } else if (isSupportedIntegerType(type)) {
+    // If the truncated source value cannot be represented in the
+    // destination type, the behavior is TBD(#180).
+    type_ = type;
+    value_ = APInt(type.getIntOrFloatBitWidth(), static_cast<int64_t>(value),
+                   /*isSigned=*/isSupportedSignedIntegerType(type));
+  } else if (isSupportedFloatType(type)) {
+    // If the source value cannot be exactly represented in the destination
+    // type, the behavior is TBD(#180).
     APFloat floatVal(value);
     bool roundingErr;
     floatVal.convert(type.cast<FloatType>().getFloatSemantics(),
@@ -199,6 +210,8 @@ Element::Element(Type type, double value) {
     type_ = type;
     value_ = floatVal;
   } else if (isSupportedComplexType(type)) {
+    // If the source value cannot be exactly represented in the real part of
+    // the destination type, the behavior is TBD(#180).
     APFloat real(value);
     APFloat imag(0.0);
     auto floatTy = type.cast<ComplexType>().getElementType().cast<FloatType>();
