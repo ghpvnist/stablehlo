@@ -4849,6 +4849,14 @@ func.func @rfft(%arg0: tensor<3x9xf32>) -> tensor<3x5xcomplex<f32>> {
 
 // -----
 
+func.func @rfft_negative_fft_length(%arg0: tensor<3x9xcomplex<f32>>) -> tensor<3x9xcomplex<f32>> {
+  // expected-error@+1 {{fft_length must be non-negative, but got: -1.}}
+  %0 = "stablehlo.fft"(%arg0) { fft_length = dense<-1> : tensor<1xi64>, fft_type = #stablehlo<fft_type RFFT> } : (tensor<3x9xcomplex<f32>>) -> tensor<3x9xcomplex<f32>>
+  func.return %0 : tensor<3x9xcomplex<f32>>
+}
+
+// -----
+
 // CHECK-LABEL: @irfft
 func.func @irfft(%arg0: tensor<3x9xcomplex<f32>>) -> tensor<3x16xf32> {
   %0 = "stablehlo.fft"(%arg0) { fft_length = dense<16> : tensor<1xi64>, fft_type = #stablehlo<fft_type IRFFT> } : (tensor<3x9xcomplex<f32>>) -> tensor<3x16xf32>

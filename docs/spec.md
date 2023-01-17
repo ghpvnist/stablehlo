@@ -2692,10 +2692,13 @@ for `fft_type = RFFT`. For example, for `L = 3`:
   * If `fft_type = IRFFT`, `element_type(operand)` is a complex type and
     `element_type(result)` is a floating-point type of the same floating-point
     semantics.
-* (C3) 1 $\le$ `size(fft_length)` $\le$ 3.
-* (C4) If among `operand` and `result`, there is a tensor `real` of a
+* (C3) If `fft_type = RFFT` or `fft_type = IRFFT`, 1 $\le$ `size(fft_length)`
+  $\le$ 3.
+* (C4) If `fft_type = RFFT` or `fft_type = IRFFT`, `fft_length` values are
+  non-negative.
+* (C5) If among `operand` and `result`, there is a tensor `real` of a
 floating-point type, then `dims(real)[-size(fft_length):] = fft_length`.
-* (C5) `dim(result, d) = dim(operand, d)` for all `d`, except for:
+* (C6) `dim(result, d) = dim(operand, d)` for all `d`, except for:
   * If `fft_type = RFFT`,
     `dim(result, -1) = dim(operand, -1) == 0 ? 0 : dim(operand, -1) / 2 + 1`.
   * If `fft_type = IRFFT`,

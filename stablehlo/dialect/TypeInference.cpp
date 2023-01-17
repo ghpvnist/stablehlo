@@ -2146,10 +2146,6 @@ LogicalResult inferDynamicUpdateSliceOp(
   return success();
 }
 
-// We intend to verify the following properties
-// P1. 1 <= rank <= 3
-// P2. Element types agree with fft_type
-// P3. Operand shape dimensions agree with fft_length for the given fft_type
 LogicalResult inferFftOp(
     std::optional<Location> location, Value operand, bool isFftTypeRfft,
     bool isFftTypeIrfft, DenseIntElementsAttr fftLength,
@@ -2157,10 +2153,17 @@ LogicalResult inferFftOp(
   auto fftLengthValues = fftLength.getValues<int64_t>();
   int64_t fftRank = fftLength.size();
 
-  // P1.
-  if (fftRank > 3 || fftRank < 1)
-    return emitOptionalError(location, "rank must be between 1 and 3, but got ",
-                             fftRank, ".");
+  if (isFftTypeRfft || isFftTypeIrfft) {
+    // (C3)
+    if (fftRank > 3 || fftRank < 1)
+      return emitOptionalError(
+          location, "rank must be between 1 and 3, but got ", fftRank, ".");
+    // (C4)
+    for (auto val : fftLengthValues)
+      if (val < 0)
+        return emitOptionalError(
+            location, "fft_length must be non-negative, but got: ", val, ".");
+  }
 
   // P2. Element type agreement
   // FFT : C -> C
@@ -2200,8 +2203,8 @@ LogicalResult inferFftOp(
         location, "operand rank must not be less than fft rank of ", fftRank,
         " for operand of type ", operandRankedType, ".");
 
+  // (C5), (C6)
   SmallVector<int64_t> resultShape = to_vector(operandShape);
-
   if (isFftTypeRfft) {
     auto shapeBack = operandShape.take_back(fftRank);
     for (auto [operandDim, fftDim] : llvm::zip(shapeBack, fftLengthValues)) {
