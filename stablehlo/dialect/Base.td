@@ -238,6 +238,9 @@ def HLO_FpComplexOrQuantizedIntTensor : RankedTensorOf<[HLO_Float, HLO_Complex, 
 // Any int, floating-point, complex or quantized tensor types
 def HLO_IntFpOrComplexOrQuantizedIntTensor : RankedTensorOf<[HLO_Int, HLO_Float, HLO_Complex, HLO_QuantizedInt]>;
 
+// Any integer, floating-point or quantized tensor types
+def HLO_IntFpOrQuantizedIntTensor : RankedTensorOf<[HLO_Int, HLO_Float, HLO_QuantizedInt]>;
+
 // Any pred, int or floating-point tensor types
 def HLO_PredIntOrFpTensor : RankedTensorOf<[HLO_Pred, HLO_Int, HLO_Float]>;
 

@@ -799,7 +799,8 @@ def StableHLO_DivOp : StableHLO_BinaryElementwiseOp<"divide",
 }
 
 def StableHLO_MaxOp : StableHLO_BinaryElementwiseOp<"maximum",
-      [HLO_Commutative, HLO_CompatibleOperandsAndResultType]> {
+      [HLO_Commutative, HLO_CompatibleOperandsAndResultType],
+      HLO_PredIntFpOrQuantizedTensor> {
   let summary = "Max operation";
   let description = [{
     Performs element-wise max operation on tensors `lhs` and `rhs` and produces
@@ -816,7 +817,8 @@ def StableHLO_MaxOp : StableHLO_BinaryElementwiseOp<"maximum",
 }
 
 def StableHLO_MinOp : StableHLO_BinaryElementwiseOp<"minimum",
-      [HLO_Commutative, HLO_CompatibleOperandsAndResultType]> {
+      [HLO_Commutative, HLO_CompatibleOperandsAndResultType],
+      HLO_PredIntFpOrQuantizedTensor> {
   let summary = "Min operation";
   let description = [{
     Performs element-wise min operation on tensors `lhs` and `rhs` and produces a
@@ -869,7 +871,7 @@ def StableHLO_PowOp : StableHLO_BinaryElementwiseOp<"power",
 
 def StableHLO_RemOp : StableHLO_BinaryElementwiseOp<"remainder",
       [HLO_CompatibleOperandsAndResultType /*remainder_c1*/],
-      HLO_IntFpOrComplexOrQuantizedIntTensor /*remainder_i1, remainder_i2*/> {
+      HLO_IntFpOrQuantizedIntTensor /*remainder_i1, remainder_i2*/> {
   let summary = "Rem operation";
   let description = [{
     Performs element-wise remainder of dividend `lhs` and divisor `rhs` tensors
@@ -1611,8 +1613,8 @@ def StableHLO_CompareOp: StableHLO_Op<"compare",
     ```
   }];
   let arguments = (ins
-    HLO_Tensor:$lhs /*compare_i1*/,
-    HLO_Tensor:$rhs /*compare_i2*/,
+    HLO_PredIntFpOrQuantizedTensor:$lhs /*compare_i1*/,
+    HLO_PredIntFpOrQuantizedTensor:$rhs /*compare_i2*/,
     StableHLO_ComparisonDirectionAttr:$comparison_direction /*compare_i3*/,
     OptionalAttr<StableHLO_ComparisonTypeAttr>:$compare_type /*compare_i4*/
   );
@@ -2065,9 +2067,9 @@ def StableHLO_ClampOp : StableHLO_ShapedInterfaceOp<"clamp",
   }];
 
   let arguments = (ins
-    HLO_Tensor:$min, /*clamp_i1*/
-    HLO_Tensor:$operand, /*clamp_c3, clamp_i2*/
-    HLO_Tensor:$max /*clamp_i3*/
+    HLO_PredIntFpOrQuantizedTensor:$min, /*clamp_i1*/
+    HLO_PredIntFpOrQuantizedTensor:$operand, /*clamp_c3, clamp_i2*/
+    HLO_PredIntFpOrQuantizedTensor:$max /*clamp_i3*/
   );
   let results = (outs HLO_Tensor:$result);
 

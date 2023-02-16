@@ -1618,23 +1618,19 @@ where `min_element = rank(min) = 0 ? min[] : min[result_index]`,
 `max_element = rank(max) = 0 ? max[] : max[result_index]`. For quantized types,
 performs `dequantize_op_quantize(clamp, min, operand, max, type(result))`.
 
-Imposing an ordering on complex numbers involves surprising semantics,
-so in the future we are planning to remove support for complex numbers
-for this operation ([#560](https://github.com/openxla/stablehlo/issues/560)).
-
 #### Inputs
 
-| Label | Name      | Type                                  | Constraints |
-|-------|-----------|---------------------------------------|-------------|
-| (I1)  | `min`     | tensor or per-tensor quantized tensor | (C1), (C3)  |
-| (I2)  | `operand` | tensor or per-tensor quantized tensor | (C1-C4)     |
-| (I3)  | `max`     | tensor or per-tensor quantized tensor | (C2), (C3)  |
+| Label | Name      | Type                                                                             | Constraints |
+|-------|-----------|----------------------------------------------------------------------------------|-------------|
+| (I1)  | `min`     | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1), (C3)  |
+| (I2)  | `operand` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1-C4)     |
+| (I3)  | `max`     | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C2), (C3)  |
 
 #### Outputs
 
-| Name     | Type                                  | Constraints |
-|----------|---------------------------------------|-------------|
-| `result` | tensor or per-tensor quantized tensor | (C4)        |
+| Name     | Type                                                                             | Constraints |
+|----------|----------------------------------------------------------------------------------|-------------|
+| `result` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C4)        |
 
 #### Constraints
 
@@ -1818,24 +1814,17 @@ uses the combination of `totalOrder` and `compareQuietEqual` operations from
 IEEE-754. This feature appears to be unused, so in the future, we are planning
 to remove it ([#584](https://github.com/openxla/stablehlo/issues/584)).
 
-For complex element types, lexicographic comparison of `(real, imag)` pairs is
-performed using the provided `comparison_direction` and `compare_type`.
-Imposing an ordering on complex numbers involves surprising semantics,
-so in the future we are planning to remove support for complex numbers
-when `comparison_direction` is `GE`, `GT`, `LE` or `LT`
-([#560](https://github.com/openxla/stablehlo/issues/560)).
-
 For quantized types. performs `dequantize_compare(lhs, rhs,
 comparison_direction)`.
 
 #### Inputs
 
-| Label | Name                   | Type                                                    | Constraints |
-|-------|------------------------|---------------------------------------------------------|-------------|
-| (I1)  | `lhs`                  | tensor or per-tensor quantized tensor                   | (C1-C3)     |
-| (I2)  | `rhs`                  | tensor or per-tensor quantized tensor                   | (C1-C2)     |
-| (I3)  | `comparison_direction` | enum of `EQ`, `NE`, `GE`, `GT`, `LE`, and `LT`          |             |
-| (I4)  | `compare_type`         | enum of `FLOAT`, `TOTALORDER`, `SIGNED`, and `UNSIGNED` | (C3)        |
+| Label | Name                   | Type                                                                        | Constraints |
+|-------|------------------------|-----------------------------------------------------------------------------|-------------|
+| (I1)  | `lhs`                  | tensor of integer, boolean or floating-point or per-tensor quantized tensor | (C1-C3)     |
+| (I2)  | `rhs`                  | tensor of integer, boolean or floating-point or per-tensor quantized tensor | (C1-C2)     |
+| (I3)  | `comparison_direction` | enum of `EQ`, `NE`, `GE`, `GT`, `LE`, and `LT`                              |             |
+| (I4)  | `compare_type`         | enum of `FLOAT`, `TOTALORDER`, `SIGNED`, and `UNSIGNED`                     | (C3)        |
 
 #### Outputs
 
@@ -1852,7 +1841,6 @@ comparison_direction)`.
   * `UNSIGNED` if `is_unsigned_integer(element_type(lhs)) or
     is_boolean(element_type(lhs))`.
   * `FLOAT` or `TOTALORDER` if `is_float(element_type(lhs))`.
-  * `FLOAT` if `is_complex(element_type(lhs))`.
 
 #### Examples
 
@@ -4040,25 +4028,21 @@ Performs element-wise max operation on tensors `lhs` and `rhs` and produces a
 * For booleans: logical OR.
 * For integers: integer maximum.
 * For floats: `maximum` from IEEE-754.
-* For complex numbers: lexicographic maximum for the `(real, imaginary)` pair.
-  Imposing an ordering on complex numbers involves surprising semantics,
-  so in the future we are planning to remove support for complex numbers
-  for this operation ([#560](https://github.com/openxla/stablehlo/issues/560)).
 * For quantized types:
   * `dequantize_op_quantize(maximum, lhs, rhs, type(result))`.
 
 #### Inputs
 
-| Label | Name  | Type                                  | Constraints |
-|-------|-------|---------------------------------------|-------------|
-| (I1)  | `lhs` | tensor or per-tensor quantized tensor | (C1)        |
-| (I2)  | `rhs` | tensor or per-tensor quantized tensor | (C1)        |
+| Label | Name  | Type                                                                             | Constraints |
+|-------|-------|----------------------------------------------------------------------------------|-------------|
+| (I1)  | `lhs` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
+| (I2)  | `rhs` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
 
 #### Outputs
 
-| Name     | Type                                  | Constraints |
-|----------|---------------------------------------|-------------|
-| `result` | tensor or per-tensor quantized tensor | (C1)        |
+| Name     | Type                                                                             | Constraints |
+|----------|----------------------------------------------------------------------------------|-------------|
+| `result` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
 
 #### Constraints
 
@@ -4085,25 +4069,21 @@ Performs element-wise min operation on tensors `lhs` and `rhs` and produces a
 * For booleans: logical AND.
 * For integers: integer minimum.
 * For floats: `minimum` from IEEE-754.
-* For complex numbers: lexicographic minimum for the `(real, imaginary)` pair.
-  Imposing an ordering on complex numbers involves surprising semantics,
-  so in the future we are planning to remove support for complex numbers
-  for this operation ([#560](https://github.com/openxla/stablehlo/issues/560)).
 * For quantized types:
   * `dequantize_op_quantize(minimum, lhs, rhs, type(result))`.
 
 #### Inputs
 
-| Label | Name  | Type                                  | Constraints |
-|-------|-------|---------------------------------------|-------------|
-| (I1)  | `lhs` | tensor or per-tensor quantized tensor | (C1)        |
-| (I2)  | `rhs` | tensor or per-tensor quantized tensor | (C1)        |
+| Label | Name  | Type                                                                             | Constraints |
+|-------|-------|----------------------------------------------------------------------------------|-------------|
+| (I1)  | `lhs` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
+| (I2)  | `rhs` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
 
 #### Outputs
 
-| Name     | Type                                  | Constraints |
-|----------|---------------------------------------|-------------|
-| `result` | tensor or per-tensor quantized tensor | (C1)        |
+| Name     | Type                                                                             | Constraints |
+|----------|----------------------------------------------------------------------------------|-------------|
+| `result` | tensor of integer, boolean or floating-point type or per-tensor quantized tensor | (C1)        |
 
 #### Constraints
 
@@ -4956,8 +4936,6 @@ The remainder is calculated as `lhs - d * rhs`, where `d` is given by:
 * For integers: `stablehlo.divide(lhs, rhs)`.
 * For floats: `division(lhs, rhs)` from IEEE-754 with rounding attribute
   `roundTowardZero`.
-* For complex numbers: TBD
-  ([#997](https://github.com/openxla/stablehlo/issues/997)).
 * For quantized types:
   * `dequantize_op_quantize(remainder, lhs, rhs, type(result))`.
 
@@ -4967,16 +4945,16 @@ nearest to the exact value of `lhs/rhs` with ties to even.
 
 #### Inputs
 
-| Label | Name  | Type                                                                             | Constraints |
-|-------|-------|----------------------------------------------------------------------------------|-------------|
-| (I1)  | `lhs` | tensor of integer, floating-point or complex type or per-tensor quantized tensor | (C1)        |
-| (I2)  | `rhs` | tensor of integer, floating-point or complex type or per-tensor quantized tensor | (C1)        |
+| Label | Name  | Type                                                             | Constraints |
+|-------|-------|------------------------------------------------------------------|-------------|
+| (I1)  | `lhs` | tensor of integer, floating-point or per-tensor quantized tensor | (C1)        |
+| (I2)  | `rhs` | tensor of integer, floating-point or per-tensor quantized tensor | (C1)        |
 
 #### Outputs
 
-| Name     | Type                                                                             | Constraints |
-|----------|----------------------------------------------------------------------------------|-------------|
-| `result` | tensor of integer, floating-point or complex type or per-tensor quantized tensor | (C1)        |
+| Name     | Type                                                             | Constraints |
+|----------|------------------------------------------------------------------|-------------|
+| `result` | tensor of integer, floating-point or per-tensor quantized tensor | (C1)        |
 
 #### Constraints
 

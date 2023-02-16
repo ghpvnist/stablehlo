@@ -291,39 +291,3 @@ func.func @compare_op_test_f64() {
   check.expect_eq_const %result, dense<[false, false, false, true, false, true, false, false, false, true, false, false, false, false]> : tensor<14xi1>
   func.return
 }
-
-// -----
-
-func.func @compare_op_test_c128_default() {
-  // (+NaN, +0.0)
-  // (+NaN, -0.0)
-  %lhs = stablehlo.constant dense<(0x7FF0000000000001, 0x0000000000000000)> : tensor<complex<f64>>
-  %rhs = stablehlo.constant dense<(0x7FF0000000000001, 0x8000000000000000)> : tensor<complex<f64>>
-  %result = stablehlo.compare EQ, %lhs, %rhs : (tensor<complex<f64>>, tensor<complex<f64>>) -> tensor<i1>
-  check.expect_eq_const %result, dense<false> : tensor<i1>
-  func.return
-}
-
-// -----
-
-func.func @compare_op_test_c128() {
-  // (+NaN, +0.0), (+0.0, +NaN), (-0.0, +0.0), (2.0, 2.0)
-  // (+NaN, -0.0), (-0.0, +NaN), (+0.0, +0.0), (2.0, 1.0)
-  %lhs = stablehlo.constant dense<[(0x7FF0000000000001, 0x0000000000000000), (0x0000000000000000, 0x7FF0000000000001), (0x8000000000000000, 0x0000000000000000), (2.0, 2.0)]> : tensor<4xcomplex<f64>>
-  %rhs = stablehlo.constant dense<[(0x7FF0000000000001, 0x8000000000000000), (0x8000000000000000, 0x7FF0000000000001), (0x0000000000000000, 0x0000000000000000), (2.0, 1.0)]> : tensor<4xcomplex<f64>>
-  %result = stablehlo.compare EQ, %lhs, %rhs, FLOAT : (tensor<4xcomplex<f64>>, tensor<4xcomplex<f64>>) -> tensor<4xi1>
-  check.expect_eq_const %result, dense<[false, false, true, false]> : tensor<4xi1>
-  func.return
-}
-
-// -----
-
-func.func @compare_op_test_c128() {
-  // (+NaN, +0.0), (+0.0, +NaN), (-0.0, +0.0), (2.0, 2.0)
-  // (+NaN, -0.0), (-0.0, +NaN), (+0.0, +0.0), (2.0, 1.0)
-  %lhs = stablehlo.constant dense<[(0x7FF0000000000001, 0x0000000000000000), (0x0000000000000000, 0x7FF0000000000001), (0x8000000000000000, 0x0000000000000000), (2.0, 2.0)]> : tensor<4xcomplex<f64>>
-  %rhs = stablehlo.constant dense<[(0x7FF0000000000001, 0x8000000000000000), (0x8000000000000000, 0x7FF0000000000001), (0x0000000000000000, 0x0000000000000000), (2.0, 1.0)]> : tensor<4xcomplex<f64>>
-  %result = stablehlo.compare NE, %lhs, %rhs, FLOAT : (tensor<4xcomplex<f64>>, tensor<4xcomplex<f64>>) -> tensor<4xi1>
-  check.expect_eq_const %result, dense<[true, true, false, true]> : tensor<4xi1>
-  func.return
-}

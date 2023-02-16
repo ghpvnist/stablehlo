@@ -148,23 +148,3 @@ func.func @max_op_test_f64() {
   check.expect_almost_eq_const %2, dense<[0xFFF0000000000000, -1.000000e+00, -4.940660e-324, -0.000000e+00, 0.000000e+00, 4.940660e-324, 1.000000e+00, 0x7FF0000000000000, 0x7FF0000000000000, 0x7FF0000000000000, 0x7FF8000000000000]> : tensor<11xf64>
   func.return
 }
-
-// -----
-
-func.func @max_op_test_c64() {
-  %0 = stablehlo.constant dense<[(1.5, 2.5), (1.5, 7.5), (0.0, 1.5), (0.0, 1.5)]> : tensor<4xcomplex<f32>>
-  %1 = stablehlo.constant dense<[(7.5, 1.5), (1.5, 2.5), (-0.0, 2.5), (0.0, 1.5)]> : tensor<4xcomplex<f32>>
-  %2 = stablehlo.maximum %0, %1 : tensor<4xcomplex<f32>>
-  check.expect_almost_eq_const %2, dense<[(7.500000e+00, 1.500000e+00), (1.500000e+00, 7.500000e+00), (-0.000000e+00, 2.500000e+00), (0.000000e+00, 1.500000e+00)]> : tensor<4xcomplex<f32>>
-  func.return
-}
-
-// -----
-
-func.func @max_op_test_c128() {
-  %0 = stablehlo.constant dense<[(1.5, 2.5), (1.5, 7.5), (0.0, 1.5), (0.0, 1.5)]> : tensor<4xcomplex<f64>>
-  %1 = stablehlo.constant dense<[(7.5, 1.5), (1.5, 2.5), (-0.0, 2.5), (0.0, 1.5)]> : tensor<4xcomplex<f64>>
-  %2 = stablehlo.maximum %0, %1 : tensor<4xcomplex<f64>>
-  check.expect_almost_eq_const %2, dense<[(7.500000e+00, 1.500000e+00), (1.500000e+00, 7.500000e+00), (-0.000000e+00, 2.500000e+00), (0.000000e+00, 1.500000e+00)]> : tensor<4xcomplex<f64>>
-  func.return
-}
