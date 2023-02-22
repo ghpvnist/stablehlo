@@ -2236,6 +2236,74 @@ LogicalResult CompareOp::reifyReturnTypeShapes(
                                      &reifiedReturnShapes);
 }
 
+LogicalResult CompareOp::verify() {
+  auto type = getLhs().getType().dyn_cast<TensorType>();
+  if (!type.hasRank()) return success();
+
+  auto elementTy = type.getElementType();
+  if (auto compareType = getCompareType()) {
+    switch (*compareType) {
+      case ComparisonType::UNSIGNED: {
+        if (!(elementTy.isSignlessInteger(1) ||
+              elementTy.isUnsignedInteger(4) ||
+              elementTy.isUnsignedInteger(8) ||
+              elementTy.isUnsignedInteger(16) ||
+              elementTy.isUnsignedInteger(32) ||
+              elementTy.isUnsignedInteger(64))) {
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        }
+        break;
+      }
+      case ComparisonType::SIGNED: {
+        if (!(elementTy.isSignlessInteger(4) ||
+              elementTy.isSignlessInteger(8) ||
+              elementTy.isSignlessInteger(16) ||
+              elementTy.isSignlessInteger(32) ||
+              elementTy.isSignlessInteger(64))) {
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        }
+        break;
+      }
+      case ComparisonType::FLOAT: {
+        auto floatTy = elementTy.dyn_cast<FloatType>();
+        auto complexTy = elementTy.dyn_cast<ComplexType>();
+        if (!floatTy && !complexTy)
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        if (floatTy && !(elementTy.isF16() || elementTy.isBF16() ||
+                         elementTy.isF32() || elementTy.isF64())) {
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        }
+        if (complexTy && !(complexTy.getElementType().isF32() ||
+                           complexTy.getElementType().isF64()))
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        break;
+      }
+      case ComparisonType::TOTALORDER: {
+        if (!(elementTy.isF16() || elementTy.isBF16() || elementTy.isF32() ||
+              elementTy.isF64())) {
+          return emitOpError()
+                 << "Comparison type " << stringifyComparisonType(*compareType)
+                 << " does not match operand type: " << getLhs().getType();
+        }
+        break;
+      }
+      case ComparisonType::NOTYPE:
+        break;
+    }
+  }
+  return success();
+}
+
 //===----------------------------------------------------------------------===//
 // SelectAndScatterOp
 //===----------------------------------------------------------------------===//

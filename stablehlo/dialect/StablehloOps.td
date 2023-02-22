@@ -1562,6 +1562,7 @@ def StableHLO_CompareOp: StableHLO_Op<"compare", [Pure, SameOperandsElementType,
     OptionalAttr<StableHLO_ComparisonTypeAttr>:$compare_type
   );
   let results = (outs HLO_PredTensor);
+  let hasVerifier = 1;
 
   let builders = [
     OpBuilder<(ins "Value":$lhs, "Value":$rhs,
