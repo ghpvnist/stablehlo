@@ -30,7 +30,8 @@ namespace stablehlo {
 Tensor evalAbsOp(const Tensor &operand, TensorType resultType);
 Tensor evalAddOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalAndOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
-Tensor evalBroadcastInDimOp(const Tensor &operand, Axes broadcastDimensions,
+Tensor evalBroadcastInDimOp(const Tensor &operand,
+                            const Axes &broadcastDimensions,
                             TensorType resultType);
 SmallVector<Tensor> evalCaseOp(const Tensor &index, RegionRange branches,
                                Scope &scope);
@@ -72,9 +73,14 @@ Tensor evalPadOp(const Tensor &operand, const Tensor &paddingValue,
                  TensorType resultType);
 Tensor evalPowerOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalRealOp(const Tensor &operand, TensorType resultType);
+SmallVector<Tensor> evalReduceOp(ArrayRef<Tensor> inputs,
+                                 ArrayRef<Tensor> initValues,
+                                 const Axes &dimensions, Region &body,
+                                 Scope &scope,
+                                 ArrayRef<TensorType> resultTypes);
 Tensor evalRemOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalReshapeOp(const Tensor &operand, TensorType resultType);
-Tensor evalReverseOp(const Tensor &operand, Axes dimensions,
+Tensor evalReverseOp(const Tensor &operand, const Axes &dimensions,
                      TensorType resultType);
 Tensor evalRsqrtOp(const Tensor &operand, TensorType resultType);
 Tensor evalSelectOp(const Tensor &pred, const Tensor &onTrue,
