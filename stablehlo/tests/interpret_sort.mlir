@@ -1,4 +1,4 @@
-// RUN: stablehlo-interpreter --interpret -split-input-file %s
+// RUN: stablehlo-translate --interpret -split-input-file %s
 
 func.func @sort_stable() {
   %input0 = stablehlo.constant dense<[[1, 2, 3], [3, 2, 1]]> : tensor<2x3xi64>
