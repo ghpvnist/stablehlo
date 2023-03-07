@@ -2850,6 +2850,7 @@ LogicalResult inferSliceOp(std::optional<Location> location, Type operandType,
 LogicalResult inferSortOp(
     std::optional<Location>, ValueRange inputs,
     SmallVectorImpl<ShapedTypeComponents>& inferredReturnShapes) {
+  // sort_c2
   for (auto resultType : inputs.getTypes()) {
     auto rankedResult = resultType.dyn_cast<RankedTensorType>();
     if (rankedResult)
@@ -4109,6 +4110,7 @@ LogicalResult verifySortOp(std::optional<Location> location, ValueRange inputs,
     if (operandShapedType.hasRank()) {
       int64_t cmpDim = dimension;
       int64_t rank = operandShapedType.getRank();
+      // sort_c4
       if (cmpDim < -rank || cmpDim >= rank)
         return emitOptionalError(
             location, "dimension attribute value must be in range [-", rank,
@@ -4118,12 +4120,13 @@ LogicalResult verifySortOp(std::optional<Location> location, ValueRange inputs,
     }
   }
 
-  // Comparator must have 2 * N scalar arguments of same type as the N inputs.
   Block& block = comparator.front();
+  // sort_c5
   size_t numOperands = operandTypes.size();
   if (block.getNumArguments() != 2 * numOperands)
     return emitOptionalError(location, "comparator block should have ",
                              2 * numOperands, " arguments");
+  // sort_c5
   for (const auto& indexedOperandType : llvm::enumerate(operandTypes)) {
     int index = indexedOperandType.index();
     Type elementType =
@@ -4138,12 +4141,13 @@ LogicalResult verifySortOp(std::optional<Location> location, ValueRange inputs,
     }
   }
 
-  // Comparator must return single 0-ranked tensor with element-type i1.
+  // sort_c5
   auto comparatorResult = block.getTerminator()->getOperands();
   if (comparatorResult.size() != 1)
     return emitOptionalError(location,
                              "comparator must return single output but got ",
                              comparatorResult.size());
+  // sort_c5
   auto comparatorResultType = comparatorResult[0].getType().cast<TensorType>();
   if ((comparatorResultType.hasRank() && comparatorResultType.getRank() != 0) ||
       !comparatorResultType.getElementType().isInteger(1))

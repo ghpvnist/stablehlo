@@ -83,6 +83,8 @@ Tensor evalSelectOp(const Tensor &pred, const Tensor &onTrue,
 Tensor evalSineOp(const Tensor &operand, TensorType resultType);
 Tensor evalSliceOp(const Tensor &operand, Index startIndices, Sizes strides,
                    TensorType resultType);
+SmallVector<Tensor> evalSortOp(ArrayRef<Tensor> inputs, Axis dimension,
+                               bool isStable, Region &comparator, Scope &scope);
 Tensor evalSqrtOp(const Tensor &operand, TensorType resultType);
 Tensor evalSubtractOp(const Tensor &lhs, const Tensor &rhs,
                       TensorType resultType);
