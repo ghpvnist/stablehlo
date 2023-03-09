@@ -1,4 +1,4 @@
-// RUN: stablehlo-interpreter --interpret -split-input-file %s
+// RUN: stablehlo-translate --interpret -split-input-file %s
 
 func.func @reduce() {
   %input = stablehlo.constant dense<[[0, 1, 2, 3, 4, 5]]> : tensor<1x6xi64>
