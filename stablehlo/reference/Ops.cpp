@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "stablehlo/reference/Ops.h"
 
+#include <numeric>
+
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/Support/Errc.h"
@@ -22,6 +24,7 @@ limitations under the License.
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/Support/DebugStringHelper.h"
+#include "stablehlo/dialect/TypeInference.h"
 #include "stablehlo/reference/Element.h"
 #include "stablehlo/reference/Errors.h"
 #include "stablehlo/reference/Types.h"
@@ -35,6 +38,13 @@ Index evalIndices(ArrayRef<Tensor> runtimeIndices) {
   for (size_t i = 0; i < runtimeIndices.size(); ++i)
     index[i] = runtimeIndices[i].get({}).getIntegerValue().getSExtValue();
   return index;
+}
+
+template <typename T>
+DenseIntElementsAttr getDenseIntElementsAttr(SmallVector<int64_t> shape,
+                                             Type elementType, T values) {
+  return DenseIntElementsAttr::get(RankedTensorType::get(shape, elementType),
+                                   values);
 }
 
 }  // namespace
@@ -237,6 +247,47 @@ SmallVector<Tensor> eval(
       SmallVector<Tensor> runtimeResults = evalReduceOp(
           runtimeInputs, runtimeInitValues, Axes(reduceOp.getDimensions()),
           reduceOp.getBody(), scope, resultTypes);
+      scope.add(op.getResults(), {runtimeResults});
+    } else if (auto reduceWindowOp = dyn_cast<ReduceWindowOp>(op)) {
+      SmallVector<Tensor> runtimeInputs =
+          scope.find(reduceWindowOp.getInputs());
+      SmallVector<Tensor> runtimeInitValues =
+          scope.find(reduceWindowOp.getInitValues());
+      SmallVector<TensorType> resultTypes;
+      for (auto resultType : reduceWindowOp.getResultTypes())
+        resultTypes.push_back(resultType.cast<TensorType>());
+      SmallVector<int64_t> windowStrides =
+          SmallVector<int64_t>(runtimeInputs[0].getRank(), 1);
+      SmallVector<int64_t> baseDilations =
+          SmallVector<int64_t>(runtimeInputs[0].getRank(), 1);
+      SmallVector<int64_t> windowDilations =
+          SmallVector<int64_t>(runtimeInputs[0].getRank(), 1);
+      SmallVector<SmallVector<int64_t>> padding =
+          SmallVector<SmallVector<int64_t>>(runtimeInputs[0].getRank(), {0, 0});
+      if (reduceWindowOp.getWindowStrides().has_value())
+        windowStrides = llvm::to_vector(
+            (*reduceWindowOp.getWindowStrides()).getValues<int64_t>());
+      if (reduceWindowOp.getBaseDilations().has_value())
+        baseDilations = llvm::to_vector(
+            (*reduceWindowOp.getBaseDilations()).getValues<int64_t>());
+      if (reduceWindowOp.getWindowDilations().has_value())
+        windowDilations = llvm::to_vector(
+            (*reduceWindowOp.getWindowDilations()).getValues<int64_t>());
+      if (reduceWindowOp.getPadding().has_value()) {
+        auto paddingOrErr =
+            hlo::convertPaddingAttribute(reduceWindowOp.getPadding(), {});
+        if (failed(paddingOrErr))
+          report_fatal_error(invalidArgument("Invalid padding format found."));
+        for (auto i = 0; i < runtimeInputs[0].getRank(); ++i) {
+          padding[i][0] = (*paddingOrErr)[i].first;
+          padding[i][1] = (*paddingOrErr)[i].second;
+        }
+      }
+      SmallVector<Tensor> runtimeResults = evalReduceWindowOp(
+          runtimeInputs, runtimeInitValues,
+          Axes(reduceWindowOp.getWindowDimensions()), Axes(windowStrides),
+          Axes(baseDilations), Axes(windowDilations), padding,
+          reduceWindowOp.getBody(), scope, resultTypes);
       scope.add(op.getResults(), {runtimeResults});
     } else if (auto reshapeOp = dyn_cast<ReshapeOp>(op)) {
       Tensor runtimeOperand = scope.find(reshapeOp.getOperand());
@@ -663,6 +714,111 @@ SmallVector<Tensor> evalReduceOp(ArrayRef<Tensor> inputs,
       result.set(resultIndex, value.get({}));
   }
   return results;
+}
+
+SmallVector<Tensor> evalReduceWindowOp(
+    ArrayRef<Tensor> inputs, ArrayRef<Tensor> initValues,
+    const Axes &windowDimensions, const Axes &windowStrides,
+    const Axes &baseDilations, const Axes &windowDilations,
+    const SmallVector<SmallVector<int64_t>> &padding, Region &body,
+    Scope &scope, ArrayRef<TensorType> resultTypes) {
+  SmallVector<Tensor> runtimeResults;
+  Builder builder = mlir::Builder(resultTypes[0].getContext());
+  Type i64Type = builder.getI64Type();
+
+  for (auto [resultType, initValue] : llvm::zip(resultTypes, initValues)) {
+    Tensor result = Tensor(resultType);
+    for (auto resultIt = result.index_begin(); resultIt != result.index_end();
+         ++resultIt)
+      result.set(*resultIt, initValue.get({}));
+    runtimeResults.push_back(result);
+  }
+
+  SmallVector<int64_t> paddingLow;
+  SmallVector<int64_t> paddingHigh;
+  for (auto paddingPair : padding) {
+    paddingLow.push_back(paddingPair[0]);
+    paddingHigh.push_back(paddingPair[1]);
+  }
+
+  SmallVector<Tensor> paddedInputs;
+  for (auto [input, initValue] : llvm::zip(inputs, initValues)) {
+    SmallVector<Type> inferredPadType;
+    auto padStatus = hlo::inferPadOp(
+        {}, input.getType(), initValue.getType(),
+        getDenseIntElementsAttr({static_cast<int64_t>(paddingLow.size())},
+                                i64Type, paddingLow),
+        getDenseIntElementsAttr({static_cast<int64_t>(paddingHigh.size())},
+                                i64Type, paddingHigh),
+        getDenseIntElementsAttr({static_cast<int64_t>(baseDilations.size())},
+                                i64Type, llvm::to_vector(baseDilations)),
+        inferredPadType);
+    if (failed(padStatus))
+      report_fatal_error(
+          invalidArgument("Could not infer PadOp's return type"));
+    auto paddedInput =
+        evalPadOp(input, initValue, Sizes(paddingLow), Sizes(baseDilations) - 1,
+                  inferredPadType[0].cast<TensorType>());
+    paddedInputs.push_back(paddedInput);
+  }
+
+  for (auto resultIt = runtimeResults[0].index_begin();
+       resultIt != runtimeResults[0].index_end(); ++resultIt) {
+    SmallVector<Tensor> windows;
+    auto windowStart = (*resultIt) * Sizes(windowStrides);
+    for (auto paddedInput : paddedInputs) {
+      SmallVector<int64_t> limitIndices;
+      for (size_t i = 0; i < windowStart.size(); ++i)
+        limitIndices.push_back(
+            std::min(windowStart[i] + windowDimensions[i] * baseDilations[i],
+                     paddedInput.getShape()[i]));
+      SmallVector<Type> inferredSliceType;
+      auto sliceStatus = hlo::inferSliceOp(
+          {}, paddedInput.getType(),
+          getDenseIntElementsAttr({static_cast<int64_t>(windowStart.size())},
+                                  i64Type, llvm::to_vector(windowStart)),
+          getDenseIntElementsAttr({static_cast<int64_t>(windowStart.size())},
+                                  i64Type, limitIndices),
+          getDenseIntElementsAttr({static_cast<int64_t>(windowStart.size())},
+                                  i64Type, llvm::to_vector(windowDilations)),
+          inferredSliceType);
+      if (failed(sliceStatus))
+        report_fatal_error(
+            invalidArgument("Could not infer SliceOp's return type"));
+      auto window =
+          evalSliceOp(paddedInput, windowStart, Sizes(windowDilations),
+                      inferredSliceType[0].cast<TensorType>());
+      windows.push_back(window);
+    }
+
+    SmallVector<Type> inputTypes;
+    for (auto input : inputs) inputTypes.push_back(input.getType());
+    SmallVector<Type> initValueTypes;
+    for (auto initValue : initValues)
+      initValueTypes.push_back(initValue.getType());
+    SmallVector<int64_t> dimensions(inputs[0].getRank());
+    std::iota(dimensions.begin(), dimensions.end(), 0);
+
+    SmallVector<ShapedTypeComponents> inferredReduceTypes;
+    auto reduceStatus = hlo::inferReduceOp(
+        /*location=*/{}, inputTypes, initValueTypes,
+        getDenseIntElementsAttr({static_cast<int64_t>(dimensions.size())},
+                                i64Type, dimensions),
+        inferredReduceTypes);
+    if (failed(reduceStatus))
+      report_fatal_error(
+          invalidArgument("Could not infer ReduceOp's return type"));
+    SmallVector<TensorType> reduceResultTypes;
+    for (auto inferredType : inferredReduceTypes)
+      reduceResultTypes.push_back(RankedTensorType::get(
+          inferredType.getDims(), inferredType.getElementType()));
+    auto reducedValues = evalReduceOp(windows, initValues, Axes(dimensions),
+                                      body, scope, reduceResultTypes);
+
+    for (auto [result, value] : llvm::zip(runtimeResults, reducedValues))
+      result.set(*resultIt, value.get({}));
+  }
+  return runtimeResults;
 }
 
 Tensor evalRemOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType) {
