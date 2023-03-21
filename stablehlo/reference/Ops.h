@@ -80,10 +80,10 @@ SmallVector<Tensor> evalReduceOp(ArrayRef<Tensor> inputs,
                                  ArrayRef<TensorType> resultTypes);
 SmallVector<Tensor> evalReduceWindowOp(
     ArrayRef<Tensor> inputs, ArrayRef<Tensor> initValues,
-    const Axes &windowDimensions, const Axes &windowStrides,
-    const Axes &baseDilations, const Axes &windowDilations,
-    const SmallVector<SmallVector<int64_t>> &padding, Region &body,
-    Scope &scope, ArrayRef<TensorType> resultTypes);
+    const Sizes &windowDimensions, const Sizes &windowStrides,
+    const Sizes &baseDilations, const Sizes &windowDilations,
+    ArrayRef<std::pair<int64_t, int64_t>> padding, Region &body, Scope &scope,
+    ArrayRef<TensorType> resultTypes);
 Tensor evalRemOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalReshapeOp(const Tensor &operand, TensorType resultType);
 Tensor evalReverseOp(const Tensor &operand, const Axes &dimensions,

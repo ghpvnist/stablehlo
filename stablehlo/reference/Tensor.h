@@ -72,6 +72,9 @@ class Tensor {
   Tensor();
   explicit Tensor(TensorType type);
   explicit Tensor(TensorType type, AsmResourceBlob blob);
+  /// This constructor initializes the tensor populated with provided initial
+  /// values. This constructor is O(n) with respect to the tensor size.
+  explicit Tensor(TensorType type, const Element &initValue);
   Tensor(const Tensor &other) = default;
   /// @}
 

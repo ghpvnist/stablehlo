@@ -93,6 +93,13 @@ Tensor::Tensor(TensorType type)
 Tensor::Tensor(TensorType type, AsmResourceBlob blob)
     : impl_(llvm::makeIntrusiveRefCnt<detail::Buffer>(type, std::move(blob))) {}
 
+Tensor::Tensor(TensorType type, const Element &element)
+    : impl_(llvm::makeIntrusiveRefCnt<detail::Buffer>(type)) {
+  for (auto indexIt = this->index_begin(); indexIt != this->index_end();
+       ++indexIt)
+    this->set(*indexIt, element);
+}
+
 Element Tensor::get(const Index &index) const {
   Type elementType = getType().getElementType();
   const char *elementPtr =
