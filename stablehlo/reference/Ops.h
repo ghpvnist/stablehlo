@@ -49,7 +49,7 @@ Tensor evalCosineOp(const Tensor &operand, TensorType resultType);
 Tensor evalDivideOp(const Tensor &lhs, const Tensor &rhs,
                     TensorType resultType);
 Tensor evalDynamicSliceOp(const Tensor &operand, ArrayRef<Tensor> startIndices,
-                          Sizes sliceSizes, TensorType resultType);
+                          const Sizes &sliceSizes, TensorType resultType);
 Tensor evalDynamicUpdateSliceOp(const Tensor &operand, const Tensor &update,
                                 ArrayRef<Tensor> startIndices,
                                 TensorType resultType);
@@ -69,7 +69,7 @@ Tensor evalNegOp(const Tensor &operand, TensorType resultType);
 Tensor evalNotOp(const Tensor &operand, TensorType resultType);
 Tensor evalOrOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalPadOp(const Tensor &operand, const Tensor &paddingValue,
-                 Sizes edgePaddingLow, Sizes interiorPadding,
+                 const Sizes &edgePaddingLow, const Sizes &interiorPadding,
                  TensorType resultType);
 Tensor evalPowerOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalRealOp(const Tensor &operand, TensorType resultType);
@@ -82,8 +82,8 @@ SmallVector<Tensor> evalReduceWindowOp(
     ArrayRef<Tensor> inputs, ArrayRef<Tensor> initValues,
     const Sizes &windowDimensions, const Sizes &windowStrides,
     const Sizes &baseDilations, const Sizes &windowDilations,
-    ArrayRef<std::pair<int64_t, int64_t>> padding, Region &body, Scope &scope,
-    ArrayRef<TensorType> resultTypes);
+    const Sizes &paddingLow, const Sizes &paddingHigh, Region &body,
+    Scope &scope, ArrayRef<TensorType> resultTypes);
 Tensor evalRemOp(const Tensor &lhs, const Tensor &rhs, TensorType resultType);
 Tensor evalReshapeOp(const Tensor &operand, TensorType resultType);
 Tensor evalReverseOp(const Tensor &operand, const Axes &dimensions,
@@ -92,8 +92,8 @@ Tensor evalRsqrtOp(const Tensor &operand, TensorType resultType);
 Tensor evalSelectOp(const Tensor &pred, const Tensor &onTrue,
                     const Tensor &onFalse, TensorType resultType);
 Tensor evalSineOp(const Tensor &operand, TensorType resultType);
-Tensor evalSliceOp(const Tensor &operand, Index startIndices, Sizes strides,
-                   TensorType resultType);
+Tensor evalSliceOp(const Tensor &operand, const Sizes &startIndices,
+                   const Sizes &strides, TensorType resultType);
 Tensor evalSqrtOp(const Tensor &operand, TensorType resultType);
 Tensor evalSubtractOp(const Tensor &lhs, const Tensor &rhs,
                       TensorType resultType);
