@@ -4181,7 +4181,8 @@ where:
 <!-- markdownlint-disable line-length -->
 * `padded_inputs = pad(inputs[:], init_values[:], padding[:, 0], padding[:, 1], base_dilations[:] - 1)`.
 * `window_start = result_index * window_strides`.
-* `windows = slice(padded_inputs[:], window_start, window_start + window_dimensions, window_dilations)`.
+* `window_end = clamp(0, window_start + window_dimensions * window_dilations, shape(inputs[0]))`.
+* `windows = slice(padded_inputs[:], window_start, window_end, window_dilations)`.
 <!-- markdownlint-enable line-length -->
 
 #### Inputs
