@@ -171,9 +171,7 @@ Tensor evalSliceOp(const Tensor &operand, const Index &index) {
 }
 
 void iterateThroughWindow(const Sizes &windowDimensions,
-                          const Sizes &windowStrides,
-                          const Sizes &windowDilations,
-                          const Sizes &operandShape, const Sizes &baseDilations,
+                          const Sizes &windowStrides, const Sizes &operandShape,
                           const Sizes &paddingLow, const Index &sourceIndex,
                           std::function<void(const Index &)> body) {
   auto rank = operandShape.size();
@@ -185,13 +183,7 @@ void iterateThroughWindow(const Sizes &windowDimensions,
     bool outOfBound = false;
     for (size_t i = 0; i < rank; ++i) {
       operandIndex[i] = sourceIndex[i] * windowStrides[i] +
-                        (*windowIndexIt)[i] * windowDilations[i] -
-                        paddingLow[i];
-      if (operandIndex[i] % baseDilations[i] != 0) {
-        outOfBound = true;
-        break;
-      }
-      operandIndex[i] /= baseDilations[i];
+                        (*windowIndexIt)[i] - paddingLow[i];
       if (operandIndex[i] < 0 || operandIndex[i] >= operandShape[i]) {
         outOfBound = true;
         break;
@@ -1491,8 +1483,6 @@ Tensor evalSelectAndScatter(const Tensor &operand, const Tensor &source,
                             Region &scatter, Scope &scope,
                             ShapedType resultType) {
   Tensor result(resultType, initValue.get({}));
-  Sizes baseDilations(operand.getRank(), 1);
-  Sizes windowDilations(operand.getRank(), 1);
   auto rank = operand.getRank();
 
   for (auto sourceIt = IndexSpaceIterator(source.getShape(), Sizes(rank, 0));
@@ -1501,8 +1491,8 @@ Tensor evalSelectAndScatter(const Tensor &operand, const Tensor &source,
     std::optional<Element> selectedVal;
     std::optional<Index> selectedIndex;
     iterateThroughWindow(
-        windowDimensions, windowStrides, windowDilations, operand.getShape(),
-        baseDilations, paddingLow, *sourceIt, [&](const Index &operandIndex) {
+        windowDimensions, windowStrides, operand.getShape(), paddingLow,
+        *sourceIt, [&](const Index &operandIndex) {
           auto currVal = operand.get(operandIndex);
           if (!selectedVal.has_value()) {
             selectedVal = currVal;
@@ -1524,8 +1514,8 @@ Tensor evalSelectAndScatter(const Tensor &operand, const Tensor &source,
           }
         });
     iterateThroughWindow(
-        windowDimensions, windowStrides, windowDilations, operand.getShape(),
-        baseDilations, paddingLow, *sourceIt, [&](const Index &operandIndex) {
+        windowDimensions, windowStrides, operand.getShape(), paddingLow,
+        *sourceIt, [&](const Index &operandIndex) {
           if (operandIndex == selectedIndex) {
             Tensor sourceValues(
                 RankedTensorType::get({2}, initValue.getElementType()));

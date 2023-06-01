@@ -4860,7 +4860,7 @@ More formally:
    `indices(source)` if `selected_index(source_index) = result_index`].
   * `selected_index(source_index) = operand_index` if
    `selected_values[source_index]` has the `operand` element
-   from `operand_index` from the same window.
+   from `operand_index`.
 
 #### Inputs
 
