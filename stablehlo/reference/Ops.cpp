@@ -1485,10 +1485,10 @@ Tensor evalSelectAndScatterOp(const Tensor &operand, const Tensor &source,
               selectedVal.value());
           Tensor currValTensor(RankedTensorType::get({}, currVal.getType()),
                                currVal);
-          auto selectedResult =
+          auto selectResult =
               eval(select, {selectedValTensor, currValTensor}, &scope);
 
-          bool selected = !selectedResult[0].get({}).getBooleanValue();
+          bool selected = !selectResult[0].get({}).getBooleanValue();
           if (selected) {
             selectedVal = currVal;
             selectedIndex = operandIndex;
