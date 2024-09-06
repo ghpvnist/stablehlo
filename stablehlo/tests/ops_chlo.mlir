@@ -73,6 +73,16 @@ func.func @constant_like(%arg0: tensor<1x2xi64>) -> (tensor<1x2xi32>) {
 
 // -----
 
+func.func @ragged_dot(%lhs : tensor<2x3xi64>, %rhs : tensor<4x3x2xi64>, %group_sizes : tensor<4xi64>) -> tensor<2x2xi64> {
+  %0 = "chlo.ragged_dot"(%lhs, %rhs, %group_sizes) {
+    group_offset = array<i64: 0>,
+    precision_config = [#chlo<precision DEFAULT>, #chlo<precision DEFAULT>]
+  } : (tensor<2x3xi64>, tensor<4x3x2xi64>, tensor<4xi64>) -> tensor<2x2xi64>
+  func.return %0 : tensor<2x2xi64>
+}
+
+// -----
+
 func.func @top_k(%arg0 : tensor<f32>) {
   // expected-error @+2 {{failed to infer returned types}}
   // @expected-error @+1{{operand's rank must be at least 1}}

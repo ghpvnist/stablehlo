@@ -96,6 +96,11 @@ LogicalResult verifyConvolutionAttributes(
     int64_t featureGroupCount, int64_t batchGroupCount,
     std::optional<ArrayAttr> precisionConfig);
 
+LogicalResult verifyPrecisionConfig(std::optional<Location> loc,
+                                    std::optional<ArrayAttr> maybeArrayAttr);
+
+bool verifyCompatibleDims(int64_t dimSize1, int64_t dimSize2);
+
 //===----------------------------------------------------------------------===//
 // Shape functions for ops.
 //===----------------------------------------------------------------------===//

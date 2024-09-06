@@ -856,4 +856,30 @@ row for matrices).}]>:$k
   }];
 }
 
+def CHLO_RaggedDotOp : CHLO_Op<"ragged_dot",
+    [Pure]> {
+  string summary = "Dot product of two ragged tensors";
+
+  string description = [{
+    Computes the dot product of two ragged tensors.
+  }];
+
+  let arguments = (ins
+    HLO_Tensor:$lhs,
+    HLO_Tensor:$rhs,
+    HLO_Tensor:$group_sizes,
+    OptionalAttr<DenseI64ArrayAttr>:$group_offset,
+    CHLO_PrecisionConfigAttr:$precision_config
+  );
+
+  let results = (outs HLO_AnyTensor:$result);
+  let hasVerifier = 1;
+
+  // Use empty `` to prevent extra whitespace before precision config.
+  // let assemblyFormat = [{
+  //   $lhs `,` $rhs `` custom<PrecisionConfig>($precision_config) attr-dict
+  //     `:` functional-type(operands, results)
+  // }];
+}
+
 #endif  // STABLEHLO_DIALECT_CHLO_OPS
