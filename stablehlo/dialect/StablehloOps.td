@@ -2697,6 +2697,24 @@ def StableHLO_MapOp: StableHLO_ShapedInterfaceOp<"map",
   }];
 }
 
+def StableHLO_RaggedDotOp: StableHLO_Op<"ragged_dot",
+      [Pure]> {
+  let summary = "Dot product of two ragged tensors";
+  let description = [{
+    Computes the dot product of two ragged tensors.
+  }];
+  let arguments = (ins
+    HLO_Tensor:$lhs,
+    HLO_Tensor:$rhs,
+    HLO_Tensor:$group_sizes,
+    OptionalAttr<DenseI64ArrayAttr>:$group_offset,
+    StableHLO_PrecisionConfigAttr:$precision_config
+  );
+
+  let results = (outs HLO_Tensor:$result);
+  let hasVerifier = 1;
+}
+
 def StableHLO_ReshapeOp: StableHLO_Op<"reshape",
       [ConditionallySpeculatable, NoMemoryEffect,
        HLO_CompatibleOperandsAndResultElementType]> {

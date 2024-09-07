@@ -1897,6 +1897,27 @@ LogicalResult SendOp::inferReturnTypes(
 }
 
 //===----------------------------------------------------------------------===//
+// RaggedDotOp
+//===----------------------------------------------------------------------===//
+
+LogicalResult inferRaggedDotOp(
+    std::optional<Location> location, Type lhsType, Type rhsType,
+    Type groupSizes, std::optional<ArrayRef<int64_t>> groupOffset,
+    std::optional<ArrayAttr> precisionConfig,
+    SmallVectorImpl<ShapedTypeComponents>& inferredReturnShapes) {
+  return hlo::inferRaggedDotOp(location, lhsType, rhsType, groupSizes,
+                               groupOffset, precisionConfig,
+                               inferredReturnShapes);
+}
+
+LogicalResult RaggedDotOp::verify() {
+  return hlo::verifyRaggedDotOp(getLoc(), getLhs().getType(),
+                                getRhs().getType(), getGroupSizes().getType(),
+                                getGroupOffset(), getPrecisionConfig(),
+                                getResult().getType());
+}
+
+//===----------------------------------------------------------------------===//
 // RecvOp
 //===----------------------------------------------------------------------===//
 

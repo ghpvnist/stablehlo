@@ -309,6 +309,12 @@ LogicalResult inferPartitionIdOp(MLIRContext* context,
                                  std::optional<Location> location,
                                  SmallVectorImpl<Type>& inferredReturnTypes);
 
+LogicalResult inferRaggedDotOp(
+    std::optional<Location> location, Type lhsType, Type rhsType,
+    Type groupSizes, std::optional<ArrayRef<int64_t>> groupOffset,
+    std::optional<ArrayAttr> precisionConfig,
+    SmallVectorImpl<ShapedTypeComponents>& inferredReturnShapes);
+
 LogicalResult inferRealOp(std::optional<Location> location, Value operand,
                           SmallVectorImpl<Type>& inferredReturnTypes);
 
@@ -509,6 +515,12 @@ LogicalResult verifyInfeedOp(HloDialectInterface* dialect,
 
 LogicalResult verifyIotaOp(std::optional<Location> location,
                            int64_t iotaDimension, Value result);
+
+LogicalResult verifyRaggedDotOp(std::optional<Location> location, Type lhsType,
+                                Type rhsType, Type groupSizes,
+                                std::optional<ArrayRef<int64_t>> groupOffset,
+                                std::optional<ArrayAttr> precisionConfig,
+                                Type result);
 
 LogicalResult verifyRealDynamicSliceOp(std::optional<Location> location,
                                        Value operand, Value startIndices,

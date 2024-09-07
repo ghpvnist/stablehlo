@@ -869,10 +869,10 @@ def CHLO_RaggedDotOp : CHLO_Op<"ragged_dot",
     HLO_Tensor:$rhs,
     HLO_Tensor:$group_sizes,
     OptionalAttr<DenseI64ArrayAttr>:$group_offset,
-    CHLO_PrecisionConfigAttr:$precision_config
+    OptionalAttr<CHLO_PrecisionConfigAttr>:$precision_config
   );
 
-  let results = (outs HLO_AnyTensor:$result);
+  let results = (outs HLO_Tensor:$result);
   let hasVerifier = 1;
 
   // Use empty `` to prevent extra whitespace before precision config.

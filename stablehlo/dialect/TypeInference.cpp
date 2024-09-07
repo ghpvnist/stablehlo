@@ -3049,6 +3049,60 @@ LogicalResult inferRealOp(std::optional<Location>, Value operand,
   return success();
 }
 
+LogicalResult inferRaggedDotOp(
+    std::optional<Location> location, Type lhsType, Type rhsType,
+    Type groupSizes, std::optional<ArrayRef<int64_t>> groupOffset,
+    std::optional<ArrayAttr> precisionConfig,
+    SmallVectorImpl<ShapedTypeComponents>& inferredReturnShapes) {
+  if (failed(hlo::verifyPrecisionConfig(location, precisionConfig)))
+    return failure();
+
+  auto rankedLhsType = cast<RankedTensorType>(lhsType);
+  auto rankedRhsType = cast<RankedTensorType>(rhsType);
+  auto rankedGroupSizesType = cast<RankedTensorType>(groupSizes);
+
+  // lhs : [m, k]
+  // rhs : [g1, k, n]
+  // group_sizes : [g2]
+  // result : [m, n]
+  SmallVector<int64_t> dimensions;
+  if (rankedLhsType.getRank() == 2 && rankedRhsType.getRank() == 3) {
+    dimensions.push_back(rankedLhsType.getDimSize(0));
+    dimensions.push_back(rankedRhsType.getDimSize(2));
+  } else {
+    return emitOptionalError(
+        location,
+        "expected lhs rank to be 2 and rhs rank to be 3 for ragged dot");
+  }
+
+  int64_t g1 = rankedRhsType.getDimSize(0);
+  int64_t g2 = rankedGroupSizesType.getDimSize(0);
+  if (g1 > g2) {
+    return emitOptionalError(
+        location,
+        "expected g1 <= g2 for shapes rhs: [g1, k, n] and group_sizes: [g2]");
+  }
+
+  if (g1 == g2 && groupOffset) {
+    if (groupOffset->size() != 1 || groupOffset.value()[0] != 0) {
+      return emitOptionalError(
+          location,
+          "expected group_offset to be 0 when g1 == g2 for shapes rhs: [g1, k, "
+          "n] and group_sizes: [g2]");
+    }
+  }
+
+  if (0 > groupOffset.value()[0] || groupOffset.value()[0] >= g2 ||
+      groupOffset.value()[0] + g1 > g2) {
+    return emitOptionalError(
+        location,
+        "expected 0 <= group_offset[0] < g2 && group_offset[0] + g1 <= g2");
+  }
+
+  inferredReturnShapes.emplace_back(dimensions);
+  return success();
+}
+
 LogicalResult inferReduceOp(
     std::optional<Location> location, TypeRange inputTypes,
     ArrayRef<int64_t> dimensions, Region& body,
@@ -4426,6 +4480,28 @@ LogicalResult verifyIotaOp(std::optional<Location> location,
   if (iotaDimension >= shape.getRank())
     return emitOptionalError(
         location, "iota dimension cannot go beyond the output rank.");
+  return success();
+}
+
+LogicalResult verifyRaggedDotOp(std::optional<Location> location, Type lhsType,
+                                Type rhsType, Type groupSizes,
+                                std::optional<ArrayRef<int64_t>> groupOffset,
+                                std::optional<ArrayAttr> precisionConfig,
+                                Type result) {
+  SmallVector<ShapedTypeComponents> inferredReturnShapes;
+  if (failed(inferRaggedDotOp(location, lhsType, rhsType, groupSizes,
+                              groupOffset, precisionConfig,
+                              inferredReturnShapes)))
+    return failure();
+
+  auto inferredShape = inferredReturnShapes[0];
+  auto resultType = cast<ShapedType>(result);
+  if (failed(verifyCompatibleShape(inferredShape.getDims(),
+                                   resultType.getShape())))
+    return emitOptionalError(
+        location, "inferred shape '",
+        hlo::dimSizesToString(inferredShape.getDims()), "' ",
+        "is incompatible with return type of operation ", resultType, "");
   return success();
 }
 
